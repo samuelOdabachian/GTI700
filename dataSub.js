@@ -48,14 +48,14 @@ function startSensor(
       if (humMatch) {
         const humValue = parseFloat(humMatch[1]);
         humHistory.push([ts, humValue]);
-        if (humHistory.length > MAX_HISTORY) humHistory.shift();
+        while (humHistory.length > MAX_HISTORY) humHistory.shift();
         console.log(`${humLabel}: ${ts} → ${humValue}`);
         saveData();
       }
       if (tempMatch) {
         const tempValue = parseFloat(tempMatch[1]);
         tempHistory.push([ts, tempValue]);
-        if (tempHistory.length > MAX_HISTORY) tempHistory.shift();
+        while (tempHistory.length > MAX_HISTORY) tempHistory.shift();
         console.log(`${tempLabel}: ${ts} → ${tempValue}`);
         saveData();
       }
