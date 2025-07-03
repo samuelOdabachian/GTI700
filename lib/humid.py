@@ -122,7 +122,7 @@ def main():
 		result = read_dht11_dat()
 		if result:
 			humidity, temperature = result
-			print ("humidity: %s %%,  Temperature: %s C`" % (humidity, temperature))
+			print ("humidity: %s %%,  Temperature: %s C" % (humidity, temperature), flush=True)
 		time.sleep(1)
 
 def destroy():
@@ -132,4 +132,4 @@ if __name__ == '__main__':
 	try:
 		main()
 	except KeyboardInterrupt:
-		destroy() 
+		destroy()
