@@ -51,6 +51,7 @@
 
         <script>
         /** ChartJS **/
+        const BACKEND_URL = "http://192.168.0.20:3000/GTI700/";
         document.addEventListener("DOMContentLoaded", () => {
             const chartElem = document.getElementById('humidityChart').getContext('2d');
             const chartElem2 = document.getElementById('tempChart').getContext('2d');
@@ -89,12 +90,12 @@
             const tempChart = new Chart(chartElem2, tempConfig);
 
             setInterval(() => {
-                fetchData("humidity", "humidity-data", humidChart);
-                fetchData("temperature", "temprature-data",tempChart);
-                fetchValeur("humidity", "Hum-Valeur-actuelle");
-                fetchValeur("temperature","Temp-Valeur-actuelle");
-                fetchMoy("humidity", "Hum-Moyenne");
-                fetchMoy("temperature", "Temp-Moyenne");
+                fetchData(BACKEND_URL + "humidity", "humidity-data", humidChart);
+                fetchData(BACKEND_URL + "temperature", "temprature-data",tempChart);
+                fetchValeur(BACKEND_URL + "humidity", "Hum-Valeur-actuelle");
+                fetchValeur(BACKEND_URL + "temperature","Temp-Valeur-actuelle");
+                fetchMoy(BACKEND_URL + "humidity", "Hum-Moyenne");
+                fetchMoy(BACKEND_URL + "temperature", "Temp-Moyenne");
             }, 3000);
         });
 
@@ -103,10 +104,10 @@
             const data = await res.json();
             const valeur = document.getElementById(id);
             try {
-                if(sensorType === "humidity"){
+                if(sensorType.includes("humidity")){
                     valeur.textContent = "Valeur actuelle : " + data.humidity + "%";
                 }
-                if(sensorType === "temperature"){
+                if(sensorType.includes("temperature")){
                     valeur.textContent = "Valeur actuelle : " + data.temperature;
                 }
             } catch (err) {
@@ -123,10 +124,10 @@
                 if(data.value === "N/A"  || data.value === "N/A%" ){
                     valeur.textContent = "Moyenne des 30 dernières valeurs : " + "en attente";
                 }else{
-                    if(sensorType === "humidity"){
+                    if(sensorType.includes("humidity")){
                         valeur.textContent = "Moyenne des 30 dernières valeurs : " + data.value;
                     }
-                    if(sensorType === "temperature"){
+                    if(sensorType.includes("temperature")){
                         valeur.textContent = "Moyenne des 30 dernières valeurs : " + data.value;
                     }
                 }
@@ -147,34 +148,31 @@
                 chart.data.datasets[0].data = [];
             }
 
-            //try {
-                data.forEach(([timestamp, value]) => {
-                    const row = document.createElement("tr");
+            data.forEach(([timestamp, value]) => {
+                const row = document.createElement("tr");
 
-                    const timeCell = document.createElement("td");
-                    timeCell.textContent = timestamp;
+                const timeCell = document.createElement("td");
+                timeCell.textContent = timestamp;
 
-                    const valueCell = document.createElement("td");
-                    if(sensorType === "humidity"){
-                        valueCell.textContent = value + "%";
+                const valueCell = document.createElement("td");
+                if(sensorType.includes("humidity")){
+                    valueCell.textContent = value + "%";
+                }else{
+                    valueCell.textContent = value;
+                }
 
-                    }else{
-                        valueCell.textContent = value;
+                if(chart){
+                    chart.data.labels.push(timestamp);
+                    chart.data.datasets[0].data.push(value);
+                    if (chart.data.labels.length > 30) {// max 30
+                        chart.data.labels.shift();
+                        chart.data.datasets[0].data.shift();
                     }
-
-                    if(chart){
-                        chart.data.labels.push(timestamp);
-                        chart.data.datasets[0].data.push(value);
-                        if (chart.data.labels.length > 30) {// max 30
-                            chart.data.labels.shift();
-                            chart.data.datasets[0].data.shift();
-                        }
-                    }
-                    row.appendChild(timeCell);
-                    row.appendChild(valueCell);
-                    tbody.appendChild(row);
-
-                });
+                }
+                row.appendChild(timeCell);
+                row.appendChild(valueCell);
+                tbody.appendChild(row);
+            });
             if(chart){chart.update();}
         }
 

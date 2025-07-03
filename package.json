@@ -5,6 +5,7 @@
   "scripts": {
     "dataSub": "node dataSub.js",
     "backend": "node backend.js",
-    "start": "npm run dataSub & npm run backend"
+    "start": "npm run dataSub & npm run backend",
+    "sync": "sudo scp -r /Applications/MAMP/htdocs/GTI700/ admin@192.168.0.20:/home/admin/;"
   }
 }

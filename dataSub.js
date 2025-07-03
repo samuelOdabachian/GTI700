@@ -1,30 +1,53 @@
 const { spawn } = require('child_process')
+const path = require('path')
+const fs = require('fs')
 
-const INTERVAL = 3000
 const MAX_HISTORY = 720
+const DATA_FILE = path.join(__dirname, 'data.json')
 
 const tempHistory = []
-const humHistory = []
+const humHistory  = []
 
-function readSensor(command, args, regex, history) {
-  const proc = spawn(command, args)
-  let output = ''
-  proc.stdout.on('data', data => { output += data.toString() })
-  proc.on('close', () => {
-    const match = output.match(regex)
-    if (match) {
-      const value = parseFloat(match[1])
-      const ts = new Date().toISOString()
-      history.push([ts, value])
-      if (history.length > MAX_HISTORY) history.shift()
-      console.log(`${ts}  ${value}`)
-    } else {
-      console.error(`Parsing error:\n${output}`)
-    }
+function saveData() {
+  fs.writeFileSync(DATA_FILE, JSON.stringify({
+    temperature: tempHistory,
+    humidity: humHistory
+  }, null, 2))
+}
+
+function startSensor(scriptPath, history, regex, label) {
+  const proc = spawn('python3', [ path.join(__dirname, scriptPath) ])
+  let buffer = ''
+  proc.stdout.on('data', data => {
+    buffer += data.toString()
+    const lines = buffer.split('\n')
+    buffer = lines.pop()
+    lines.forEach(line => {
+      const m = line.match(regex)
+      if (m) {
+        const value = parseFloat(m[1])
+        const ts    = new Date().toISOString()
+        history.push([ts, value])
+        if (history.length > MAX_HISTORY) history.shift()
+        console.log(`${label}: ${ts} → ${value}`)
+        saveData()
+      }
+    })
+  })
+  proc.stderr.on('data', data => {
+    console.error(`[${label}]`, data.toString())
   })
 }
 
-setInterval(() => {
-  readSensor('python3', ['lib/thermistor.py'], /temperature\s*=\s*([-+\d.]+)/i, tempHistory)
-  readSensor('python3', ['lib/humid.py'],      /humidity:\s*(\d+)/i,        humHistory)
-}, INTERVAL)
+function getData() {
+  if (fs.existsSync(DATA_FILE)) {
+    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
+  }
+  return { temperature: [], humidity: [] }
+}
+
+startSensor('lib/thermistor.py', tempHistory, /temperature\s*=\s*([-+\d.]+)/i, 'Température')
+//startSensor('lib/humid.py',      humHistory,      /humidity:\s*(\d+)/i,          'Humidité')
+
+module.exports = { getData }
+console.log('dataSub.js exports:', module.exports);
